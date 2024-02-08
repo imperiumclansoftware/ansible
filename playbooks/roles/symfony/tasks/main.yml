@@ -20,7 +20,7 @@
 
 - name: Remove Symfony repository installer
   file: 
-    path: /tmp/zsh-installer.sh 
+    path: /tmp/symfony-installer.sh
     state: absent
 
 - name: Install Symfony client

@@ -1,0 +1,44 @@
+---
+# tasks file for roles/webServer
+- name: Install latest version of Apache
+  apt: 
+    name: apache2 
+    update_cache: yes 
+    state: present
+  become: true
+  
+- name: Create document root for domain configured in host variable
+  file:
+    path: "/var/www/{{ http_host }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+  become: true
+
+- name: Copy your index file
+  template:
+    src: "files/index-template.html"
+    mode: 0755
+    dest: "/var/www/{{ http_host }}/index.html"
+  become: true
+
+- name: Set up virtuahHost
+  template:
+    src: "files/apache-template.conf"
+    mode: 0755
+    dest: "/etc/apache2/sites-available/{{ http_conf }}"
+  become: true
+
+- name: Enable site
+  command: a2ensite {{ http_conf }}
+  notify: restart-apache
+  register: enablesite
+  changed_when: enablesite.rc != 0
+  become: true
+# - name: "UFW firewall allow HTTP on port {{ http_port }}"
+#   ufw:
+#     rule: allow
+#     port: "{{ http_port }}"
+#     proto: tcp
+

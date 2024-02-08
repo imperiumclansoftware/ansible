@@ -1,0 +1,29 @@
+- name: install packages for php
+  apt: 
+    state: present
+  with_items:
+    - git
+    - 'libapache2-mod-{{ phpversion }}'
+    - '{{ phpversion }}-cli'
+    - '{{ phpversion }}-curl'
+    - '{{ phpversion }}-fpm'
+    - '{{ phpversion }}-intl'
+    - '{{ phpversion }}-json'
+    - '{{ phpversion }}-mcrypt'
+    - '{{ phpversion }}-zip'
+    - '{{ phpversion }}-xml'
+    - '{{ phpversion }}-gd'
+  become: true
+
+- name: Copy your index file
+  template:
+    src: "files/index-template.php"
+    mode: 0755 
+    dest: "/var/www/{{ http_host }}/index.php"
+  become: true
+
+- name: Delete content & directory
+  ansible.builtin.file:
+    state: absent
+    path: "/var/www/{{ http_host }}/index.html"
+  become: true

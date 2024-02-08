@@ -1,0 +1,5 @@
+- name : Playbook for install production servers
+  hosts: production  
+  roles: 
+    - all
+    - php

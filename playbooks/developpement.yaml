@@ -1,0 +1,5 @@
+- name : Playbook for install develloppement servers
+  hosts: developpement  
+  roles: 
+    - all
+    - php

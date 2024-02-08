@@ -1,0 +1,5 @@
+---
+# defaults file for roles/webServer
+http_host: 000-default
+http_conf: 000-default.conf
+http_port: 80

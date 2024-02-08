@@ -1,0 +1,8 @@
+---
+
+- name: Copy dynamic motd template
+  template:
+    src: motd.j2
+    mode: 0755
+    dest: /etc/motd
+  become: true

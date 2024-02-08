@@ -1,0 +1,29 @@
+---
+# tasks file for playbooks/roles/composer
+
+- name: Install Pre Requiste
+  apt:
+    name: curl
+    update_cache: yes
+    state: present
+  become: true
+
+- name: Download Installer
+  command: curl -sS {{ composer_installer_url }} -o {{ composer_installer_file }}
+  notify: Download Installer
+  register: downloadinstaller
+  changed_when: downloadinstaller.rc != 0
+
+- name: Install Composer
+  command: php composer-setup.php --install-dir={{ composer_install_dir }} --filename=composer
+  notify: Install composer
+  register: composerinstall
+  changed_when: composerinstall.rc != 0
+  become: true
+
+- name: Update Composer
+  command: composer self-update
+  notify: Update Composer
+  register: composerupdate
+  changed_when: composerupdate.rc != 0
+  become: true

@@ -1,0 +1,31 @@
+---
+# tasks file for playbooks/roles/symfony
+
+- name: Install Symfony dependancy
+  apt:
+    name: curl
+    update_cache: yes
+    state: present
+  become: true
+
+- name: Download Symfony repository installer
+  get_url: 
+    url: '{{ symony_setup_url }}'
+    dest: /tmp/symfony-installer.sh
+    mode: 0777
+    
+- name: Install Symfony repository
+  shell: /tmp/symfony-installer.sh
+  become: true
+
+- name: Remove Symfony repository installer
+  file: 
+    path: /tmp/zsh-installer.sh 
+    state: absent
+
+- name: Install Symfony client
+  apt:
+    name: symfony-cli
+    update_cache: yes
+    state: present
+  become: true

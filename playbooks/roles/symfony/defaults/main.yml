@@ -1,0 +1,4 @@
+---
+# defaults file for playbooks/roles/symfony
+
+symony_setup_url: https://dl.cloudsmith.io/public/symfony/stable/setup.deb.sh

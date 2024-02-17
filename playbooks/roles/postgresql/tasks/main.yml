@@ -1,0 +1,88 @@
+---
+# tasks file for playbooks/roles/postgresql
+
+- name: Add pgdg repo to sources.list.d
+  lineinfile:
+    path: /etc/apt/sources.list.d/pgdg.list
+    line: "deb http://apt.postgresql.org/pub/repos/apt {{ ansible_distribution_release }}-pgdg main"
+    create: true
+  become: true
+
+- name: Download PostgreSQL key and add it to system keyring
+  apt_key:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    state: present
+  become: true
+
+- name: Install PostgreSQL
+  apt:
+    name: postgresql
+    state: present
+    update_cache: true
+  become: true
+
+- name: "Install Python module : psycopg2"
+  apt:
+    name: python3-psycopg2
+    state: present
+    update_cache: true
+  become: true
+
+- name: Grant users joe and simon access to databases sales and logistics from ipv6 localhost ::1/128 using peer authentication
+  community.postgresql.postgresql_pg_hba:
+    dest: /etc/postgresql/16/main/pg_hba.conf
+    contype: local
+    users: postgres
+    source: ::1
+    databases: all
+    method: trust
+    create: true
+  become: true
+  notify: "restart postgres"
+
+- name: "Start and enable services"
+  service: "name={{ item }} state=started enabled=yes"
+  with_items:
+    - postgresql
+
+- name: Create a new database with name "{{ db_name }}" and specific encoding
+  community.postgresql.postgresql_db:
+    name: "{{ db_name }}"
+    encoding: UTF-8
+    template: template0
+
+- name: Connect to {{ db_name }} database, create {{ db_user }} user, and grant access to database
+  community.postgresql.postgresql_user:
+    db: "{{ db_name }}"
+    name: "{{ db_user }}"
+    password: "{{ db_password }}"
+    role_attr_flags: CREATEDB,CREATEROLE,SUPERUSER
+    
+  become: true
+
+- name: Add a comment on {{ db_user }} user
+  community.postgresql.postgresql_user:
+    db: "{{ db_name }}"
+    name: "{{ db_user }}"
+    comment: Database administration user
+  become: true
+
+- name: Enable users connection from local network 
+  community.postgresql.postgresql_pg_hba:
+    dest: /etc/postgresql/16/main/pg_hba.conf
+    contype: host
+    users: all
+    source: "192.168.1.0/24"
+    databases: all
+    method: scram-sha-256
+    create: true
+  become: true
+  notify: "restart postgres"
+
+- name: Enable network server
+  lineinfile:
+    path: /etc/postgresql/16/main/postgresql.conf
+    line: "listen_addresses = '*'"
+    create: true
+  become: true
+  notify: "restart postgres"

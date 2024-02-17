@@ -1,0 +1,5 @@
+---
+# defaults file for playbooks/roles/postgresql
+db_user: dba
+db_password: "!starwars06"
+db_name: main

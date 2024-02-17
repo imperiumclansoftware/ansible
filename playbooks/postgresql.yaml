@@ -1,0 +1,5 @@
+- name : Playbook for install postgresql servers
+  hosts: postgresql  
+  roles: 
+    - all
+    - postgresql

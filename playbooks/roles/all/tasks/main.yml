@@ -6,3 +6,10 @@
     mode: 0755
     dest: /etc/motd
   become: true
+
+- name: Install latest version of nano
+  apt: 
+    name: nano 
+    update_cache: yes 
+    state: present
+  become: true

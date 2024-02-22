@@ -1,0 +1,21 @@
+---
+# tasks file for playbooks/roles/kubernetes-worker
+
+- name: Get Token for join
+  delegate_to: "{{ groups['kubernetes-master'][0] }}"
+  shell: kubeadm token list | awk 'NR == 2 {print $1}'
+  args:
+    warn: no
+  register: __token
+
+- name: Get CA certificate hash
+  delegate_to: "{{ groups['kubernetes-master'][0] }}"
+  community.crypto.x509_certificate_info:
+    path: /etc/kubernetes/pki/ca.crt
+  register: __k8s_pki_ca
+
+- name: Join worker to cluster
+  shell: "kubeadm join {{ hostvars[inventory_hostname].master }}:6443 --token {{ __token.stdout }} --discovery-token-ca-cert-hash sha256:{{ __k8s_pki_ca['public_key_fingerprints']['sha256']  | replace(':','')}}"
+  args:
+    warn: no
+  become: true

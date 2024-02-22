@@ -1,0 +1,177 @@
+---
+# tasks file for playbooks/roles/kubernetes
+- name: Add kubernetes repo to sources.list.d
+  lineinfile:
+    path: /etc/apt/sources.list.d/kubernetes.list
+    line: "deb [arch=amd64] http://apt.kubernetes.io/ kubernetes-xenial main"
+    create: true
+  become: true
+
+- name: Download kubernetes key and add it to system keyring
+  apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
+  become: true
+
+- name: install packages for kubernetes
+  apt:
+    name:
+      - kubeadm
+      - kubelet
+      - kubectl
+    state: present
+    update_cache: true
+  become: true
+
+- name: Hold kubeadm
+  ansible.builtin.dpkg_selections:
+    name: kubeadm
+    selection: hold
+  become: true
+
+- name: Hold kubelet
+  ansible.builtin.dpkg_selections:
+    name: kubelet
+    selection: hold
+  become: true
+
+- name: Hold kubectl
+  ansible.builtin.dpkg_selections:
+    name: kubectl
+    selection: hold
+  become: true
+
+- name: Disable SWAP since kubernetes can't work with swap enabled (1/2)
+  shell: |
+    swapoff -a
+  become: true
+
+- name: Disable SWAP in fstab since kubernetes can't work with swap enabled (2/2)
+  replace:
+    path: /etc/fstab
+    regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+    replace: '# \1'
+  become: true
+
+- name: Add module overlay in containerd configuration
+  lineinfile:
+    path: /etc/modules-load.d/containerd.conf
+    line: "overlay"
+    create: true
+  become: true
+
+- name: Add module br_netfilter in containerd configuration
+  lineinfile:
+    path: /etc/modules-load.d/containerd.conf
+    line: "br_netfilter"
+    create: true
+  become: true
+
+- name: Enable overlay module
+  shell: |
+    modprobe overlay
+  become: true
+
+- name: Enable br_netfilter module
+  shell: |
+    modprobe br_netfilter
+  become: true
+  
+- name: Add Ipv6 Bridge
+  lineinfile:
+    path: /etc/sysctl.d/kubernetes.conf
+    line: "net.bridge.bridge-nf-call-ip6tables = 1"
+    create: true
+  become: true
+
+- name: Add Ipv4 Bridge
+  lineinfile:
+    path: /etc/sysctl.d/kubernetes.conf
+    line: "net.bridge.bridge-nf-call-iptables = 1"
+    create: true
+  become: true
+
+- name: Add IP Forward
+  lineinfile:
+    path: /etc/sysctl.d/kubernetes.conf
+    line: "net.ipv4.ip_forward = 1"
+    create: true
+  become: true
+  
+- name: Apply net config
+  shell: |
+    sysctl --system
+  become: true
+
+- name: Start docker service
+  shell: |
+    systemctl start docker
+  become: true
+
+- name: Set hostname for {{ hostvars[inventory_hostname].hostname }}
+  shell: |
+    hostnamectl set-hostname {{ hostvars[inventory_hostname].hostname }}
+  become: true
+
+- name: Initialize kubelet
+  lineinfile:
+    path: /etc/default/kubelet
+    line: KUBELET_EXTRA_ARGS="--cgroup-driver=cgroupfs"
+    create: true
+  become: true
+
+- name: Restart daemons
+  shell: |
+    systemctl daemon-reload && systemctl restart kubelet
+  become: true
+
+- name: Copy docker daemon file configuration
+  template:
+    src: "daemon.json"
+    mode: 0755
+    dest: "/etc/docker/daemon.json"
+  become: true
+
+- name: Restart daemons
+  shell: |
+    systemctl daemon-reload && systemctl restart docker
+  become: true
+
+- name: Configure Kubeadm
+  lineinfile:
+    path: /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+    line: Environment="KUBELET_EXTRA_ARGS=--fail-swap-on=false"
+    create: true
+  become: true
+
+- name: Restart daemons
+  shell: |
+    systemctl daemon-reload && systemctl restart kubelet
+  become: true
+
+- name: Check if kubeconfig exist
+  stat: 
+    path: $HOME/.kube/config
+  register: kubeconfig
+
+- name: Start docker
+  shell: |
+    systemctl start docker
+  become: true
+
+- name: Remove containerd toml file
+  ansible.builtin.file:
+    state: absent
+    path: /etc/containerd/config.toml
+  become: true
+
+- name: Restart containerd
+  shell: |
+    systemctl restart containerd
+  become: true
+
+- name: Generate /etc/hosts file
+  template:
+    src=hosts.j2
+    dest=/etc/hosts
+  become: true

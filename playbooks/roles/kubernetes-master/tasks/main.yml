@@ -1,0 +1,22 @@
+---
+# tasks file for playbooks/roles/kubernetes-master
+
+- name: Initialize cluster {{ hostvars[inventory_hostname].hostname }}
+  shell: |
+    kubeadm init --control-plane-endpoint={{ hostvars[inventory_hostname].hostname }} --upload-certs
+  become: true
+  when: kubeconfig.stat.exists == false
+
+- name: Copy config for current user
+  shell: |
+    mkdir $HOME/.kube/ && cp -i /etc/kubernetes/admin.conf $HOME/.kube/config && chown $(id -u):$(id -g) $HOME/.kube/config
+  become: true
+  when: kubeconfig.stat.exists == false
+  
+- name: Install Flannel
+  shell: |
+    kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+
+- name: Untaint the node
+  shell: |
+    kubectl taint nodes --all node-role.kubernetes.io/control-plane-

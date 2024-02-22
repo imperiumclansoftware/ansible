@@ -1,0 +1,5 @@
+- name : Playbook for install kubernetes master
+  hosts: kubernetes-worker  
+  roles: 
+    - all
+    - kubernetes-worker

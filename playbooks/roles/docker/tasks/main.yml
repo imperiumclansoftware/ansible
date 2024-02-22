@@ -15,15 +15,14 @@
 
 - name: install packages for docker
   apt:
-    name: "{{ item }}"
+    name:  
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
     state: present
     update_cache: true
-  with_items:
-    - docker-ce
-    - docker-ce-cli
-    - containerd.io
-    - docker-buildx-plugin
-    - docker-compose-plugin
   become: true
 
 - name: Install Hello World container

@@ -3,7 +3,7 @@
 - name: Add kubernetes repo to sources.list.d
   lineinfile:
     path: /etc/apt/sources.list.d/kubernetes.list
-    line: "deb [arch=amd64] http://apt.kubernetes.io/ kubernetes-xenial main"
+    line: "deb [arch=amd64] https://apt.kubernetes.io/ kubernetes-xenial main"
     create: true
   become: true
 
